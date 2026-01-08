@@ -1,0 +1,29 @@
+# we should write this command in cli: az aks get-credentials -g MyResourceGroup -n myaks --admin --file kubeconfig
+name: CI/CD
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: build
+        run: |
+          docker login myacr1970.azurecr.io -u myacr1970 -p 29PWJouoG80KTyevDpYBMHMyY0wqbippGmdpBOksLF+ACRADCpY1
+          docker build -t myacr1970.azurecr.io/myapp:v1 .
+          docker push myacr1970.azurecr.io/myapp:v1
+  
+  Deploy:
+    runs-on: ubuntu-latest
+    needs: Build
+    steps:
+      - uses: actions/checkout@v4
+      - name: deploy
+        run: |
+          export KUBECONFIG=$PWD/kubeconfig
+          kubectl config get-contexts
+          kubectl apply -f deployment.yaml
+          kubectl rollout restart deployment/myapp
